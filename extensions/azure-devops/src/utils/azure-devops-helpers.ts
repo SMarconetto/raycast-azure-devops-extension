@@ -1,9 +1,7 @@
 import {Color, Icon} from "@raycast/api";
 import {WorkItemsResponse, WiqlResponse} from "../types/azure-devops"
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-export const API_BASE_URL = "https://dev.azure.com"
+const API_BASE_URL = "https://dev.azure.com"
 
 export const STATE_COLORS: Record<string, Color> = {
     Active: Color.Blue,
@@ -15,53 +13,61 @@ export const STATE_COLORS: Record<string, Color> = {
     Closed: Color.SecondaryText,
 };
 
+function sanitizeWiqlInput(text: string): string {
+    return text.trim().replace(/'/g, "''").replace(/[;\-\-]/g, "");
+}
 
-// ─── API ─────────────────────────────────────────────────────────────────
+async function executeWiql(org: string, pat: string, query: string, maxResults = 50): Promise<WiqlResponse> {
+    const url = buildUrl(`${org}/_apis/wit/wiql`, {"$top": maxResults});
 
-
-export async function fetchQueryWiql(org: string, pat: string, text: string, maxResults = 50): Promise<WiqlResponse> {
-
-    let wiqlQuery = "";
-
-    // execute search by work item id
-    const isId = /^\d+$/.test(text.trim());
-    if (isId) {
-        wiqlQuery = `Select [System.Id]
-                     From WorkItems
-                     Where [System.Id] = ${text.trim()}
-                     Order By [System.ChangedDate] Desc`;
-    } else {
-
-        // execute search by work item title as fallback
-        const safe = text.trim().replace(/'/g, "''"); // escape singolo apice
-        wiqlQuery = `Select [System.Id]
-                     From WorkItems
-                     Where [System.Title] Contains '${safe}'
-                     Order By [System.ChangedDate] Desc`;
-    }
-
-
-    const url = buildUrl(`${org}/_apis/wit/wiql`,
-        {
-            "$top": maxResults,
-        })
-
-    const res = await fetch(url,
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: buildAuthHeader(pat),
-            },
-            body: JSON.stringify({query: wiqlQuery}),
-        }
-    );
+    const res = await fetch(url, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: buildAuthHeader(pat),
+        },
+        body: JSON.stringify({query}),
+    });
 
     if (!res.ok) {
-        throw new Error(`Fetch WIQL: ${res.status} ${res.statusText}`);
+        throw new Error(`WIQL: ${res.status} ${res.statusText}`);
     }
 
     return await res.json() as WiqlResponse;
+}
+
+export async function fetchQueryWiql(org: string, pat: string, text: string, maxResults = 50): Promise<WiqlResponse> {
+    const trimmed = text.trim();
+    let query: string;
+
+    if (/^\d+$/.test(trimmed)) {
+        query = `Select [System.Id]
+                 From WorkItems
+                 Where [System.Id] = ${parseInt(trimmed, 10)}
+                 Order By [System.ChangedDate] Desc`;
+    } else {
+        const safe = sanitizeWiqlInput(trimmed);
+        query = `Select [System.Id]
+                 From WorkItems
+                 Where [System.Title] Contains '${safe}'
+                 Order By [System.ChangedDate] Desc`;
+    }
+
+    return executeWiql(org, pat, query, maxResults);
+}
+
+export async function fetchMyWorkItems(org: string, pat: string): Promise<WiqlResponse> {
+    return executeWiql(
+        org,
+        pat,
+        `Select [System.Id]
+         From WorkItems
+         Where [System.AssignedTo] = @Me
+         And [System.State] <> 'Closed'
+         And [System.State] <> 'Removed'
+         Order By [System.ChangedDate] Desc`,
+        100
+    );
 }
 
 export async function fetchWorkItemsByIds(org: string, pat: string, ids: number[]): Promise<WorkItemsResponse> {
@@ -103,7 +109,32 @@ export async function fetchWorkItemsByIds(org: string, pat: string, ids: number[
     return await res.json() as WorkItemsResponse;
 }
 
-// ─── Methods ─────────────────────────────────────────────────────────────────
+export async function testConnection(org: string, pat: string): Promise<void> {
+    const url = buildUrl(`${org}/_apis/wit/wiql`, {"$top": 1});
+
+    const res = await fetch(url, {
+        method: "POST",
+        redirect: "manual",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: buildAuthHeader(pat),
+        },
+        body: JSON.stringify({query: "Select [System.Id] From WorkItems Where [System.Id] = 0"}),
+    });
+
+    if (res.status === 301 || res.status === 302 || res.status === 303) {
+        throw new Error("Authentication failed");
+    }
+    if (res.status === 401 || res.status === 403) {
+        throw new Error("Authentication failed");
+    }
+    if (res.status === 404) {
+        throw new Error(`Organization "${org}" not found`);
+    }
+    if (!res.ok) {
+        throw new Error("Authentication failed");
+    }
+}
 
 export function buildWorkItemUrl(
     org: string,
@@ -129,10 +160,6 @@ export function getWorkItemIcon(type: string): Icon {
     }
 }
 
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-
 function buildUrl(path: string, params?: Record<string, unknown>): string {
 
     const url = new URL(path, API_BASE_URL);
@@ -145,13 +172,11 @@ function buildUrl(path: string, params?: Record<string, unknown>): string {
                 return;
             }
 
-            // array
             if (Array.isArray(value)) {
                 value.forEach((v) => sp.append(key, String(v)));
                 return;
             }
 
-            // number, boolean, string
             sp.set(key, String(value));
         });
     }
@@ -160,7 +185,6 @@ function buildUrl(path: string, params?: Record<string, unknown>): string {
 
     return url.toString();
 }
-
 
 function buildAuthHeader(pat: string): string {
     return "Basic " + Buffer.from(":" + pat).toString("base64");

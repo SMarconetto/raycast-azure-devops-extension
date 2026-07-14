@@ -1,31 +1,31 @@
 {
   "$schema": "https://www.raycast.com/schemas/extension.json",
-  "name": "microsoft-azure-devops",
-  "title": "Microsoft Azure DevOps",
-  "description": "Integration with Azure DevOps services for developers",
-  "icon": "extension-icon.png",
+  "name": "seven-pace-timetracker",
+  "title": "7pace Timetracker",
+  "description": "Track time with 7pace Timetracker integrated with Azure DevOps",
+  "icon": "seven-pace-icon.png",
   "license": "MIT",
   "commands": [
     {
-      "name": "azure-devops-credentials",
-      "title": "Credentials DevOps",
-      "description": "Manage your Azure DevOps credentials securely",
+      "name": "seven-pace-credentials",
+      "title": "Credentials 7pace",
+      "description": "Manage your 7pace and Azure DevOps credentials",
       "mode": "view",
-      "subtitle": "Add, edit, or remove Azure DevOps credentials"
+      "subtitle": "Add, edit, or remove 7pace credentials"
     },
     {
-      "name": "azure-devops-search",
-      "title": "Search DevOps",
-      "description": "Search for any work item with match description or number",
+      "name": "seven-pace-timesheet",
+      "title": "Timesheet 7pace",
+      "description": "Log work hours on work items via 7pace Timetracker",
       "mode": "view",
-      "subtitle": "Search work items by description or number"
+      "subtitle": "Track time on work items"
     },
     {
-      "name": "azure-devops-my-items",
-      "title": "My Work Items",
-      "description": "View work items assigned to you grouped by state",
+      "name": "seven-pace-recap",
+      "title": "Recap 7pace",
+      "description": "Monthly calendar view of logged hours with task breakdown",
       "mode": "view",
-      "subtitle": "Your assigned work items"
+      "subtitle": "View monthly timesheet recap"
     }
   ],
   "dependencies": {

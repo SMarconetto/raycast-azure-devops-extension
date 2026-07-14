@@ -1,26 +1,10 @@
 import {List, ActionPanel, Action, LocalStorage, showToast, Toast, Icon, Color} from "@raycast/api";
 import {useState, useEffect, useCallback, useRef} from "react";
 import {WorkItem, WiqlResponse, WorkItemsResponse} from "./types/azure-devops";
-import {fetchQueryWiql, fetchWorkItemsByIds, buildWorkItemUrl, getWorkItemIcon} from "./utils/azure-devops-helpers"
-
-
-// ─── Constants ────────────────────────────────────────────────────────────────
+import {fetchQueryWiql, fetchWorkItemsByIds, buildWorkItemUrl, getWorkItemIcon, STATE_COLORS} from "./utils/azure-devops-helpers"
 
 const DEBOUNCE_MS = 400;
 const MIN_CHARS = 2;
-
-const STATE_COLORS: Record<string, Color> = {
-    Active: Color.Blue,
-    New: Color.Purple,
-    "In Progress": Color.Orange,
-    Resolved: Color.Green,
-    Done: Color.Green,
-    "To Do": Color.Yellow,
-    Closed: Color.SecondaryText,
-};
-
-
-// ─── Main component ───────────────────────────────────────────────────
 
 export default function Command() {
     const [searchText, setSearchText] = useState("");
@@ -29,7 +13,6 @@ export default function Command() {
     const [credentials, setCredentials] = useState<{ org: string; pat: string } | null>(null);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Carica le credenziali una sola volta all'avvio
     useEffect(() => {
         (async () => {
             const org = await LocalStorage.getItem<string>("org");
@@ -38,8 +21,8 @@ export default function Command() {
             if (!org || !pat) {
                 await showToast({
                     style: Toast.Style.Failure,
-                    title: "Credenziali mancanti",
-                    message: "Configura prima le credenziali Azure DevOps",
+                    title: "Missing credentials",
+                    message: "Configure your Azure DevOps credentials first",
                 });
                 return;
             }
@@ -48,7 +31,6 @@ export default function Command() {
         })();
     }, []);
 
-    // Logica di ricerca
     const searchWorkItems = useCallback(
         async (text: string) => {
             if (!credentials || text.trim().length < MIN_CHARS) {
@@ -59,10 +41,8 @@ export default function Command() {
             setIsLoading(true);
 
             try {
-                // complex query to devops
                 const wiqlRes: WiqlResponse = await fetchQueryWiql(credentials.org, credentials.pat, text);
 
-                // extract ids of retrieved work items
                 const ids = wiqlRes.workItems.map((wi) => wi.id);
 
                 if (ids.length === 0) {
@@ -70,7 +50,6 @@ export default function Command() {
                     return;
                 }
 
-                // fetch work items details
                 const workItemsRes: WorkItemsResponse = await fetchWorkItemsByIds(credentials.org, credentials.pat, ids);
 
                 const getWorkItemDate = (wi: WorkItem) => {
@@ -99,7 +78,6 @@ export default function Command() {
         [credentials]
     );
 
-    // Debounce: parte la ricerca solo dopo 400 ms di inattività
     useEffect(() => {
         if (debounceRef.current) clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(() => searchWorkItems(searchText), DEBOUNCE_MS);
@@ -108,23 +86,21 @@ export default function Command() {
         };
     }, [searchText, searchWorkItems]);
 
-    // ─── Render ────────────────────────────────────────────────────────────────
-
     return (
         <List
             isLoading={isLoading}
             onSearchTextChange={setSearchText}
-            searchBarPlaceholder="Cerca work item per titolo o ID..."
+            searchBarPlaceholder="Search work items by title or ID..."
             throttle
         >
             {workItems.length === 0 && !isLoading && (
                 <List.EmptyView
                     icon={Icon.MagnifyingGlass}
-                    title={searchText.length < MIN_CHARS ? "Inizia a digitare" : "Nessun risultato"}
+                    title={searchText.length < MIN_CHARS ? "Start typing" : "No results"}
                     description={
                         searchText.length < MIN_CHARS
-                            ? `Inserisci almeno ${MIN_CHARS} caratteri`
-                            : `Nessun work item trovato per "${searchText}"`
+                            ? `Enter at least ${MIN_CHARS} characters`
+                            : `No work items found for "${searchText}"`
                     }
                 />
             )}
