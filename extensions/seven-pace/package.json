@@ -1,0 +1,60 @@
+{
+  "$schema": "https://www.raycast.com/schemas/extension.json",
+  "name": "seven-pace-timetracker",
+  "title": "7pace Timetracker",
+  "description": "Track time with 7pace Timetracker integrated with Azure DevOps",
+  "icon": "seven-pace-icon.png",
+  "license": "MIT",
+  "commands": [
+    {
+      "name": "seven-pace-credentials",
+      "title": "Credentials 7pace",
+      "description": "Manage your 7pace and Azure DevOps credentials",
+      "mode": "view",
+      "subtitle": "Add, edit, or remove 7pace credentials"
+    },
+    {
+      "name": "seven-pace-timesheet",
+      "title": "Timesheet 7pace",
+      "description": "Log work hours on work items via 7pace Timetracker",
+      "mode": "view",
+      "subtitle": "Track time on work items"
+    },
+    {
+      "name": "seven-pace-recap",
+      "title": "Recap 7pace",
+      "description": "Monthly calendar view of logged hours with task breakdown",
+      "mode": "view",
+      "subtitle": "View monthly timesheet recap"
+    }
+  ],
+  "dependencies": {
+    "@raycast/api": "^1.103.0",
+    "@raycast/utils": "^2.2.1"
+  },
+  "devDependencies": {
+    "@raycast/eslint-config": "^2.0.4",
+    "@types/node": "22.13.10",
+    "@types/react": "19.0.10",
+    "eslint": "^9.22.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.2"
+  },
+  "scripts": {
+    "dev": "ray develop",
+    "lint": "ray lint",
+    "fix-lint": "ray lint --fix",
+    "build": "ray build",
+    "publish": "npx @raycast/api@latest publish",
+    "prepublishOnly": "echo \"\\n\\nIt seems like you are trying to publish the Raycast extension to npm.\\n\\nIf you did intend to publish it to npm, remove the \\`prepublishOnly\\` script and rerun \\`npm publish\\` again.\\nIf you wanted to publish it to the Raycast Store instead, use \\`npm run publish\\` instead.\\n\\n\" && exit 1"
+  },
+  "author": "SMarconetto",
+  "platforms": [
+    "Windows",
+    "macOS"
+  ],
+  "categories": [
+    "Developer Tools",
+    "Productivity"
+  ]
+}
