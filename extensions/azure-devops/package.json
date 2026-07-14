@@ -19,6 +19,13 @@
       "description": "Search for any work item with match description or number",
       "mode": "view",
       "subtitle": "Search work items by description or number"
+    },
+    {
+      "name": "azure-devops-my-items",
+      "title": "My Work Items",
+      "description": "View work items assigned to you grouped by state",
+      "mode": "view",
+      "subtitle": "Your assigned work items"
     }
   ],
   "dependencies": {
